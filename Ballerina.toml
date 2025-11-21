@@ -1,0 +1,9 @@
+[package]
+org = "ramindu"
+name = "todoservice"
+version = "0.1.0"
+title = "TodoService"
+
+[build-options]
+sticky = true
+cloud = "k8s"
