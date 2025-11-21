@@ -10,6 +10,8 @@ jobs:
     env:
       AKS_RESOURCE_GROUP: ${{ secrets.AKS_RESOURCE_GROUP }} # Azure Resource Group where the AKS cluster is
       AKS_CLUSTER_NAME: ${{ secrets.AKS_CLUSTER_NAME }}     # Name of the AKS cluster
+      # 🎯 NEW: Define the namespace for deployment
+      BALLERINA_NAMESPACE: balleina # You can change this to 'dev', 'staging', etc.
 
     steps:
       - name: Checkout Code
@@ -36,7 +38,6 @@ jobs:
         run: bal pack
 
       ## --- Docker Build and Push ---
-      # Assuming you are pushing to Azure Container Registry (ACR) or Docker Hub
 
       - name: Build Docker Image
         run: bal build --cloud=docker
@@ -47,28 +48,35 @@ jobs:
           echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
           docker push airline-service:${{ github.sha }}
 
-      # ## --- Azure Kubernetes Service (AKS) Deployment ---
+      ## --- Azure Kubernetes Service (AKS) Deployment ---
 
-      # - name: 🔐 Azure Login via Service Principal
-      #   # This action uses a Service Principal JSON secret to authenticate with Azure
-      #   uses: azure/login@v2
-      #   with:
-      #     creds: ${{ secrets.AZURE_CREDENTIALS }}
-      #     enable-AzPSSession: true
+      - name: 🔐 Azure Login via Service Principal
+        # This action uses a Service Principal JSON secret to authenticate with Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          enable-AzPSSession: true
           
-      # - name: 🚢 Set AKS Kubectl Context
-      #   # This action retrieves and configures kubectl to communicate with the AKS cluster
-      #   uses: azure/aks-set-context@v3
-      #   with:
-      #     resource-group: ${{ env.AKS_RESOURCE_GROUP }}
-      #     cluster-name: ${{ env.AKS_CLUSTER_NAME }}
+      - name: 🚢 Set AKS Kubectl Context
+        # This action retrieves and configures kubectl to communicate with the AKS cluster
+        uses: azure/aks-set-context@v3
+        with:
+          resource-group: ${{ env.AKS_RESOURCE_GROUP }}
+          cluster-name: ${{ env.AKS_CLUSTER_NAME }}
+
+      - name: 🚀 Ensure Namespace Exists
+        # It's best practice to ensure the namespace exists before deploying resources into it.
+        run: |
+          echo "Ensuring namespace ${{ env.BALLERINA_NAMESPACE }} exists..."
+          # Use --ignore-not-found for idempotency: this won't fail if the namespace already exists.
+          kubectl create namespace ${{ env.BALLERINA_NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
           
-      # - name: Deploy Kubernetes Resources with kubectl
-      #   run: |
-      #     echo "Applying Kubernetes manifests from target/kubernetes/hello_k8s..."
-      #     # The main deployment command
-      #     kubectl apply -f target/kubernetes/hello_k8s
+      - name: Deploy Kubernetes Resources with kubectl
+        run: |
+          echo "Applying Kubernetes manifests to namespace ${{ env.BALLERINA_NAMESPACE }} from target/kubernetes/hello_k8s..."
+          # 🎯 UPDATED: Use the -n flag to specify the namespace for the deployment
+          kubectl apply -f target/kubernetes/hello_k8s -n ${{ env.BALLERINA_NAMESPACE }}
           
-      #     # Optional: Verify deployment status
-      #     echo "Deployment successful. Checking status:"
-      #     kubectl get deployments
+          # Optional: Verify deployment status within the specified namespace
+          echo "Deployment successful. Checking status in namespace ${{ env.BALLERINA_NAMESPACE }}:"
+          kubectl get deployments -n ${{ env.BALLERINA_NAMESPACE }}
