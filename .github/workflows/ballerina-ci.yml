@@ -46,7 +46,7 @@ jobs:
         run: |
           # Use your Docker/ACR login credentials here
           echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-          docker push airline-service:${{ github.sha }}
+          docker push ramilu90/airline-service:1.0.0
 
       ## --- Azure Kubernetes Service (AKS) Deployment ---
 
