@@ -75,7 +75,7 @@ jobs:
         run: |
           echo "Applying Kubernetes manifests to namespace ${{ env.BALLERINA_NAMESPACE }} from target/kubernetes/hello_k8s..."
           # 🎯 UPDATED: Use the -n flag to specify the namespace for the deployment
-          kubectl apply -f target/kubernetes/airlineservice.yaml -n ${{ env.BALLERINA_NAMESPACE }}
+          kubectl apply -f target/kubernetes/airlineservice/airlineservice.yaml -n ${{ env.BALLERINA_NAMESPACE }}
           
           # Optional: Verify deployment status within the specified namespace
           echo "Deployment successful. Checking status in namespace ${{ env.BALLERINA_NAMESPACE }}:"
