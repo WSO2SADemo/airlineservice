@@ -35,7 +35,7 @@ jobs:
 
       - name: Build Ballerina Project (Generates K8s artifacts)
         # Ensure your Ballerina.toml or Cloud.toml is configured for K8s deployment
-        run: bal build
+        run: bal build --cloud=kubernetes
 
       ## --- Docker Build and Push ---
 
