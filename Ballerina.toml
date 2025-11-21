@@ -1,8 +1,8 @@
 [package]
 org = "ramindu"
-name = "todoservice"
+name = "airlineservice"
 version = "0.1.0"
-title = "TodoService"
+title = "AirlineService"
 
 [build-options]
 sticky = true
