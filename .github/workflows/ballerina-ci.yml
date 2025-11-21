@@ -35,7 +35,7 @@ jobs:
 
       - name: Build Ballerina Project (Generates K8s artifacts)
         # Ensure your Ballerina.toml or Cloud.toml is configured for K8s deployment
-        run: bal build --cloud=kubernetes
+        run: bal build
 
       ## --- Docker Build and Push ---
 
@@ -76,18 +76,28 @@ jobs:
           echo "Current working directory:"
           pwd
           echo ""
-          echo "Listing all files recursively in current directory:"
-          ls -R
+          echo "Listing all files recursively in current directory (first 100 lines):"
+          ls -R | head -100
           echo ""
-          echo "Checking target/kubernetes directory specifically:"
-          ls -R target/kubernetes 2>/dev/null || echo "target/kubernetes directory not found"
+          echo "Checking target directory structure:"
+          find target -type f -name "*.yaml" -o -name "*.yml" 2>/dev/null || echo "No YAML files found in target"
+          echo ""
+          echo "Checking if target/kubernetes exists:"
+          if [ -d "target/kubernetes" ]; then
+            echo "target/kubernetes directory exists. Contents:"
+            find target/kubernetes -type f
+          else
+            echo "target/kubernetes directory does NOT exist"
+          fi
           
       - name: Deploy Kubernetes Resources with kubectl
         run: |
-          echo "Applying Kubernetes manifests to namespace ${{ env.BALLERINA_NAMESPACE }} from target/kubernetes/hello_k8s..."
-          # 🎯 UPDATED: Use the -n flag to specify the namespace for the deployment
-          kubectl apply -f target/kubernetes/airlineservice/airlineservice.yaml -n ${{ env.BALLERINA_NAMESPACE }}
-          
-          # Optional: Verify deployment status within the specified namespace
-          echo "Deployment successful. Checking status in namespace ${{ env.BALLERINA_NAMESPACE }}:"
-          kubectl get deployments -n ${{ env.BALLERINA_NAMESPACE }}
+          echo "Applying Kubernetes manifests to namespace ${{ env.BALLERINA_NAMESPACE }} from target/kubernetes..."
+          if [ -f "target/kubernetes/airlineservice/airlineservice.yaml" ]; then
+            kubectl apply -f target/kubernetes/airlineservice/airlineservice.yaml -n ${{ env.BALLERINA_NAMESPACE }}
+            echo "Deployment successful. Checking status in namespace ${{ env.BALLERINA_NAMESPACE }}:"
+            kubectl get deployments -n ${{ env.BALLERINA_NAMESPACE }}
+          else
+            echo "ERROR: target/kubernetes/airlineservice/airlineservice.yaml not found"
+            exit 1
+          fi
