@@ -4,7 +4,7 @@ import ballerina/log;
 // Unified API Service
 listener http:Listener apiListener = new (airlineServicePort);
 
-service /airline on apiListener {
+service /airlinedev on apiListener {
 
     // Todo resources
     resource function get test() returns json {
