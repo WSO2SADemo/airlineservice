@@ -1,6 +1,9 @@
 name: Ballerina CI/CD Pipeline
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - prod
 
 jobs:
   build-and-deploy:
