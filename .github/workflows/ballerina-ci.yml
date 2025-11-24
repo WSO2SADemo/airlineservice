@@ -74,6 +74,7 @@ jobs:
       - name: 🔍 Debug - Check Working Directory and Files
         run: |
           if [ -d "target/kubernetes" ]; then
+            ls -la target/kubernetes
             echo "target/kubernetes directory exists."
             find target/kubernetes -type f
           else
