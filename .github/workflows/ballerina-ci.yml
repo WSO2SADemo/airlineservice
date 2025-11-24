@@ -73,4 +73,4 @@ jobs:
           
       - name: Deploy Kubernetes Resources with kubectl
         run: |
-          kubectl apply -f /target/kubernetes/airlineservice -n ${{ env.BALLERINA_NAMESPACE }}
+          kubectl apply -f target/kubernetes/airlineservice -n ${{ env.BALLERINA_NAMESPACE }}
