@@ -70,6 +70,17 @@ jobs:
           echo "Ensuring namespace ${{ env.BALLERINA_NAMESPACE }} exists..."
           # Use --ignore-not-found for idempotency: this won't fail if the namespace already exists.
           kubectl create namespace ${{ env.BALLERINA_NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: 🔍 Debug - Check Working Directory and Files
+        run: |
+          if [ -d "target/kubernetes" ]; then
+            ls -la target/kubernetes
+            echo "target/kubernetes directory exists."
+            echo "location: "
+            pwd
+          else
+            echo "target/kubernetes directory does NOT exist"
+          fi
           
       - name: Deploy Kubernetes Resources with kubectl
         run: |
