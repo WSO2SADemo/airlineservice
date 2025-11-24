@@ -10,13 +10,20 @@ jobs:
     env:
       AKS_RESOURCE_GROUP: ${{ secrets.AKS_RESOURCE_GROUP }} # Azure Resource Group where the AKS cluster is
       AKS_CLUSTER_NAME: ${{ secrets.AKS_CLUSTER_NAME }}     # Name of the AKS cluster
-      # 🎯 NEW: Define the namespace for deployment
-      BALLERINA_NAMESPACE: balleina # You can change this to 'dev', 'staging', etc.
+      # 🎯 FIX: Corrected typo in namespace name
+      BALLERINA_NAMESPACE: ballerina # Changed 'balleina' to 'ballerina' or use your preferred name.
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
+      - name: ⚙️ Debug - Print Environment Variables
+        run: |
+          echo "Current Working Directory: $(pwd)"
+          echo "AKS_RESOURCE_GROUP: ${{ env.AKS_RESOURCE_GROUP }}"
+          echo "AKS_CLUSTER_NAME: ${{ env.AKS_CLUSTER_NAME }}"
+          echo "BALLERINA_NAMESPACE: ${{ env.BALLERINA_NAMESPACE }}"
+        
       - name: Set up Ballerina
         uses: ballerina-platform/setup-ballerina@v1
         with:
@@ -37,39 +44,39 @@ jobs:
         # Ensure your Ballerina.toml or Cloud.toml is configured for K8s deployment
         run: bal build
 
-      ## --- Docker Build and Push ---
-
-      # - name: Build Docker Image
-      #   run: bal build --cloud=docker
-
-      # - name: Push Docker Image
-      #   run: |
-      #     # Use your Docker/ACR login credentials here
-      #     echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-      #     docker push ramilu90/airline-service:1.0.0
-
       ## --- Azure Kubernetes Service (AKS) Deployment ---
 
       - name: 🔐 Azure Login via Service Principal
-        # This action uses a Service Principal JSON secret to authenticate with Azure
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
           enable-AzPSSession: true
           
       - name: 🚢 Set AKS Kubectl Context
-        # This action retrieves and configures kubectl to communicate with the AKS cluster
         uses: azure/aks-set-context@v3
         with:
           resource-group: ${{ env.AKS_RESOURCE_GROUP }}
           cluster-name: ${{ env.AKS_CLUSTER_NAME }}
 
-      - name: 🚀 Ensure Namespace Exists
-        # It's best practice to ensure the namespace exists before deploying resources into it.
+      - name: 🚀 Ensure Namespace Exists (with Debug)
         run: |
-          echo "Ensuring namespace ${{ env.BALLERINA_NAMESPACE }} exists..."
-          # Use --ignore-not-found for idempotency: this won't fail if the namespace already exists.
-          kubectl create namespace ${{ env.BALLERINA_NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
+          NAMESPACE="${{ env.BALLERINA_NAMESPACE }}"
+          CREATE_COMMAND="kubectl create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -"
+          
+          echo "Checking if namespace ${NAMESPACE} exists..."
+          if kubectl get namespace ${NAMESPACE} > /dev/null 2>&1; then
+            echo "Namespace ${NAMESPACE} already exists. Skipping creation."
+          else
+            echo "Namespace ${NAMESPACE} does not exist. Creating it now..."
+            echo "Executing command: ${CREATE_COMMAND}"
+            # Execute the command to create the namespace idempotently
+            eval ${CREATE_COMMAND}
+          fi
+          
+          # Final check to confirm creation status
+          echo "--- Current Namespace Status ---"
+          kubectl get namespace ${NAMESPACE}
+          echo "--------------------------------"
 
       - name: 🔍 Debug - Check Working Directory and Files
         run: |
