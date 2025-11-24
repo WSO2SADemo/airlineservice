@@ -4,7 +4,7 @@ import ballerina/log;
 // Unified API Service
 listener http:Listener apiListener = new (airlineServicePort);
 
-service /airlinedev on apiListener {
+service /airline on apiListener {
 
     // Todo resources
     resource function get test() returns json {
@@ -127,26 +127,27 @@ listener http:Listener mockServicesListener = new (9091);
 // Mock Customer Service
 service /customers on mockServicesListener {
     
-    resource function get [string customerId]() returns Customer|http:NotFound {
-        // Mock customer data
-        if customerId == "C001" {
-            return {
-                customerId: "C001",
-                firstName: "John",
-                lastName: "Doe",
-                email: "john.doe@email.com",
-                phoneNumber: "+1234567890",
-                loyaltyTier: "GOLD"
-            };
-        } else if customerId == "C002" {
-            return {
-                customerId: "C002",
-                firstName: "Jane",
-                lastName: "Smith",
-                email: "jane.smith@email.com",
-                phoneNumber: "+1234567891",
-                loyaltyTier: "SILVER"
-            };
+    resource function get [string customerId]() returns Customer|http:NotFound|http:InternalServerError {
+        // Call external mock API to get customer data
+        json[]|error response = mockApiClient->get(path = "/");
+        
+        if response is error {
+            log:printError("Error calling mock API", 'error = response);
+            return <http:InternalServerError>{body: "Failed to retrieve customer data"};
+        }
+        
+        // Filter customers by customerId
+        foreach json customerJson in response {
+            Customer|error customer = customerJson.cloneWithType();
+            
+            if customer is error {
+                log:printError("Error parsing customer data", 'error = customer);
+                continue;
+            }
+            
+            if customer.customerId == customerId {
+                return customer;
+            }
         }
         
         return <http:NotFound>{body: "Customer not found"};
