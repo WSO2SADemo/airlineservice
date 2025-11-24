@@ -78,6 +78,7 @@ jobs:
             echo "target/kubernetes directory exists."
             echo "location: "
             pwd
+            ls
           else
             echo "target/kubernetes directory does NOT exist"
           fi
