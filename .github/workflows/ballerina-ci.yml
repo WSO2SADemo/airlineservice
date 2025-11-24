@@ -78,11 +78,11 @@ jobs:
             echo "target/kubernetes directory exists."
             echo "location: "
             pwd
-            ls
+            ls /home/runner/work/airlineservice/airlineservice/target
           else
             echo "target/kubernetes directory does NOT exist"
           fi
           
       - name: Deploy Kubernetes Resources with kubectl
         run: |
-          kubectl apply -f target/kubernetes/airlineservice -n ${{ env.BALLERINA_NAMESPACE }}
+          kubectl apply -f /home/runner/work/airlineservice/airlineservice/target/kubernetes/airlineservice -n ${{ env.BALLERINA_NAMESPACE }}
