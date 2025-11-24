@@ -30,6 +30,25 @@ service /airline on apiListener {
         return customer;
     }
 
+    resource function get customers() returns Customer[]|http:InternalServerError {
+        json[]|error response = mockApiClient->get(path = "/");
+        if response is error {
+            log:printError("Error calling mock API", 'error = response);
+            return <http:InternalServerError>{body: "Failed to retrieve customer information"};
+        }
+        Customer[] customers = [];
+        foreach json customerJson in response {
+            Customer|error customer = customerJson.cloneWithType();
+            if customer is error {
+                log:printError("Error parsing customer data", 'error = customer);
+                continue;
+            }
+            
+            customers.push(customer);
+        }
+        return customers;
+    }
+
     // Search flights between origin and destination
     resource function get flights(string origin, string destination) returns Flight[]|http:InternalServerError {
         Flight[]|error flights = searchFlights(origin, destination);
