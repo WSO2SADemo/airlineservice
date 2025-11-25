@@ -13,8 +13,7 @@ jobs:
     env:
       AKS_RESOURCE_GROUP: ${{ secrets.AKS_RESOURCE_GROUP }} # Azure Resource Group where the AKS cluster is
       AKS_DEV_CLUSTER_NAME: ${{ secrets.AKS_DEV_CLUSTER_NAME }}     # Name of the AKS cluster
-      # 🎯 FIX: Corrected typo in namespace name
-      BALLERINA_NAMESPACE: ballerina # Changed 'balleina' to 'ballerina' or use your preferred name.
+      BALLERINA_NAMESPACE: ballerina 
 
     steps:
       - name: Checkout Code
@@ -46,6 +45,24 @@ jobs:
       - name: Build Ballerina Project (Generates K8s artifacts)
         # Ensure your Ballerina.toml or Cloud.toml is configured for K8s deployment
         run: bal build
+
+      # --- START DOCKER REGISTRY STEPS ---
+      
+      - name: 🔐 Docker Login
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          # Assumes Docker Hub. For other registries, specify the 'registry' input.
+          
+      - name: 📦 Push Docker Image to Registry
+        run: |
+          # Pushes the image tag defined in your Deployment manifest (airlineservice-deployment)
+          IMAGE_NAME="ramilu90/airline-service:1.0.1"
+          echo "Pushing image: ${IMAGE_NAME}"
+          docker push ${IMAGE_NAME}
+
+      # --- END DOCKER REGISTRY STEPS ---
 
       ## --- Azure Kubernetes Service (AKS) Deployment ---
 
@@ -98,5 +115,6 @@ jobs:
           
       - name: Deploy Kubernetes Resources with kubectl
         run: |
+          # 🚨 Added delete command for clean updates
           kubectl delete -f /home/runner/work/airlineservice/airlineservice/target/kubernetes/airlineservice -n ${{ env.BALLERINA_NAMESPACE }}
           kubectl apply -f /home/runner/work/airlineservice/airlineservice/target/kubernetes/airlineservice -n ${{ env.BALLERINA_NAMESPACE }}
